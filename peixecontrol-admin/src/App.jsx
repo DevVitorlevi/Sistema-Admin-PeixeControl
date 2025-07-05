@@ -20,17 +20,17 @@ export default function App() {
 
         <Route
           path="/dashboard"
-          element={isAuthenticated() ? <Dashboard /> : <Navigate to="/login" />}
+          element={<Dashboard />}
         />
 
         <Route
           path="/create-user"
-          element={isAuthenticated() ? <CreateUser /> : <Navigate to="/login" />}
+          element={<CreateUser />}
         />
 
         <Route
           path="/register-admin"
-          element={isAuthenticated() ? <RegisterAdmin /> : <Navigate to="/login" />}
+          element={<RegisterAdmin />}
         />
 
         {/* Rota catch-all para páginas não encontradas */}
