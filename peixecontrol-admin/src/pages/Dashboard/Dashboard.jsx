@@ -19,6 +19,19 @@ export default function Dashboard() {
     const [users, setUsers] = useState([]);
     const navigate = useNavigate();
 
+    function planTypeName(planType) {
+        switch (planType) {
+            case 'assinatura_mensal':
+                return 'Assinatura Mensal';
+            case 'assinatura_anual':
+                return 'Assinatura Anual';
+            case 'vitalicio':
+                return 'Vitalício';
+            default:
+                return planType;
+        }
+    }
+
     async function loadUsers() {
         try {
             const token = localStorage.getItem('token');
@@ -69,13 +82,14 @@ export default function Dashboard() {
                         <TableRow key={user._id}>
                             <TableCell>{user.name}</TableCell>
                             <TableCell>{user.email}</TableCell>
-                            <TableCell>{user.planType}</TableCell>
+                            <TableCell>{planTypeName(user.planType)}</TableCell>
                             <TableCell>
-                                {user.planType === 'vitalicio'
-                                    ? 'Vitalício'
-                                    : user.subscriptionValidUntil
+                                {(user.planType === 'assinatura_mensal' || user.planType === 'assinatura_anual')
+                                    ? (user.subscriptionValidUntil
                                         ? new Date(user.subscriptionValidUntil).toLocaleDateString()
-                                        : 'N/A'}
+                                        : 'N/A')
+                                    : 'Vitalício'
+                                }
                             </TableCell>
                         </TableRow>
                     ))}

@@ -7,7 +7,7 @@ export default function CreateUser() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [planType, setPlanType] = useState('assinatura');
+    const [planType, setPlanType] = useState('assinatura_mensal');
     const navigate = useNavigate();
 
     async function handleCreateUser(e) {
@@ -50,7 +50,8 @@ export default function CreateUser() {
                     required
                 />
                 <Select value={planType} onChange={(e) => setPlanType(e.target.value)}>
-                    <option value="assinatura">Assinatura Mensal</option>
+                    <option value="assinatura_mensal">Assinatura Mensal</option>
+                    <option value="assinatura_anual">Assinatura Anual</option>
                     <option value="vitalicio">Vitalício</option>
                 </Select>
                 <Button type="submit">Criar Usuário</Button>
