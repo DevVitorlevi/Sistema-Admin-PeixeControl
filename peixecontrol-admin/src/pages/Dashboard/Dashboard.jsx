@@ -17,21 +17,10 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
     const [users, setUsers] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate();
 
-    function planTypeName(planType) {
-        switch (planType) {
-            case 'assinatura_mensal':
-                return 'Assinatura Mensal';
-            case 'assinatura_anual':
-                return 'Assinatura Anual';
-            case 'vitalicio':
-                return 'Vitalício';
-            default:
-                return planType;
-        }
-    }
-
+    // Carregar usuários
     async function loadUsers() {
         try {
             const token = localStorage.getItem('token');
@@ -53,10 +42,50 @@ export default function Dashboard() {
         loadUsers();
     }, []);
 
+    // Logout
     function handleLogout() {
         localStorage.removeItem('token');
         navigate('/login');
     }
+
+    // Função para renovar assinatura
+    async function handleRenew(userId) {
+        const newDate = prompt('Digite a nova data de validade (formato: YYYY-MM-DD)');
+        if (!newDate) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            await api.post('/users/renew-subscription', { userId, newValidUntil: newDate }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            alert('Assinatura renovada com sucesso!');
+            loadUsers(); // Atualiza a lista
+        } catch (error) {
+            alert(error.response?.data?.message || 'Erro ao renovar assinatura.');
+        }
+    }
+
+    // Função para cancelar acesso
+    async function handleCancelAccess(userId) {
+        if (!window.confirm('Tem certeza que deseja cancelar o acesso deste usuário?')) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            await api.patch(`/users/${userId}/cancel-access`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            alert('Acesso cancelado com sucesso!');
+            loadUsers(); // Atualiza a lista
+        } catch (error) {
+            alert(error.response?.data?.message || 'Erro ao cancelar acesso.');
+        }
+    }
+
+    // Filtrar usuários pelo termo digitado
+    const filteredUsers = users.filter(user =>
+        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     return (
         <Container>
@@ -68,6 +97,16 @@ export default function Dashboard() {
                     <Button onClick={handleLogout} danger>Sair</Button>
                 </ButtonGroup>
             </Header>
+
+            {/* Campo de Busca */}
+            <input
+                type="text"
+                placeholder="Buscar por nome ou email"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ padding: '8px', marginBottom: '16px', width: '300px' }}
+            />
+
             <Table>
                 <TableHead>
                     <TableRow>
@@ -75,21 +114,38 @@ export default function Dashboard() {
                         <TableHeader>Email</TableHeader>
                         <TableHeader>Plano</TableHeader>
                         <TableHeader>Validade</TableHeader>
+                        <TableHeader>Ações</TableHeader>
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {users.map(user => (
+                    {filteredUsers.map(user => (
                         <TableRow key={user._id}>
                             <TableCell>{user.name}</TableCell>
                             <TableCell>{user.email}</TableCell>
-                            <TableCell>{planTypeName(user.planType)}</TableCell>
                             <TableCell>
-                                {(user.planType === 'assinatura_mensal' || user.planType === 'assinatura_anual')
-                                    ? (user.subscriptionValidUntil
-                                        ? new Date(user.subscriptionValidUntil).toLocaleDateString()
-                                        : 'N/A')
-                                    : 'Vitalício'
-                                }
+                                {user.planType === 'vitalicio' && 'Vitalício'}
+                                {user.planType === 'assinatura_mensal' && 'Mensal'}
+                                {user.planType === 'assinatura_anual' && 'Anual'}
+                                {user.planType === 'cancelado' && (
+                                    <span style={{ color: 'red', fontWeight: 'bold' }}>Cancelado</span>
+                                )}
+                            </TableCell>
+                            <TableCell>
+                                {user.subscriptionValidUntil
+                                    ? new Date(user.subscriptionValidUntil).toLocaleDateString()
+                                    : 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                                {user.planType !== 'cancelado' ? (
+                                    <>
+                                        <Button onClick={() => handleRenew(user._id)}>Renovar</Button>{' '}
+                                        <Button onClick={() => handleCancelAccess(user._id)} danger>
+                                            Cancelar Acesso
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <em>Acesso cancelado</em>
+                                )}
                             </TableCell>
                         </TableRow>
                     ))}
