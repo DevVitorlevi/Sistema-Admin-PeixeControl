@@ -48,7 +48,7 @@ export default function Dashboard() {
         navigate('/login');
     }
 
-    // Função para renovar assinatura
+    // Renovar assinatura
     async function handleRenew(userId) {
         const newDate = prompt('Digite a nova data de validade (formato: YYYY-MM-DD)');
         if (!newDate) return;
@@ -59,13 +59,13 @@ export default function Dashboard() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert('Assinatura renovada com sucesso!');
-            loadUsers(); // Atualiza a lista
+            loadUsers();
         } catch (error) {
             alert(error.response?.data?.message || 'Erro ao renovar assinatura.');
         }
     }
 
-    // Função para cancelar acesso
+    // Cancelar acesso
     async function handleCancelAccess(userId) {
         if (!window.confirm('Tem certeza que deseja cancelar o acesso deste usuário?')) return;
 
@@ -75,13 +75,29 @@ export default function Dashboard() {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert('Acesso cancelado com sucesso!');
-            loadUsers(); // Atualiza a lista
+            loadUsers();
         } catch (error) {
             alert(error.response?.data?.message || 'Erro ao cancelar acesso.');
         }
     }
 
-    // Filtrar usuários pelo termo digitado
+    // Retomar acesso
+    async function handleReactivate(userId) {
+        if (!window.confirm('Deseja realmente retomar o acesso deste usuário?')) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            await api.patch(`/users/${userId}/reactivate-access`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            alert('Acesso retomado com sucesso!');
+            loadUsers();
+        } catch (error) {
+            alert(error.response?.data?.message || 'Erro ao retomar acesso.');
+        }
+    }
+
+    // Filtrar usuários pelo termo buscado
     const filteredUsers = users.filter(user =>
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -98,7 +114,6 @@ export default function Dashboard() {
                 </ButtonGroup>
             </Header>
 
-            {/* Campo de Busca */}
             <input
                 type="text"
                 placeholder="Buscar por nome ou email"
@@ -114,6 +129,7 @@ export default function Dashboard() {
                         <TableHeader>Email</TableHeader>
                         <TableHeader>Plano</TableHeader>
                         <TableHeader>Validade</TableHeader>
+                        <TableHeader>Status</TableHeader>
                         <TableHeader>Ações</TableHeader>
                     </TableRow>
                 </TableHead>
@@ -126,9 +142,6 @@ export default function Dashboard() {
                                 {user.planType === 'vitalicio' && 'Vitalício'}
                                 {user.planType === 'assinatura_mensal' && 'Mensal'}
                                 {user.planType === 'assinatura_anual' && 'Anual'}
-                                {user.planType === 'cancelado' && (
-                                    <span style={{ color: 'red', fontWeight: 'bold' }}>Cancelado</span>
-                                )}
                             </TableCell>
                             <TableCell>
                                 {user.subscriptionValidUntil
@@ -136,7 +149,14 @@ export default function Dashboard() {
                                     : 'N/A'}
                             </TableCell>
                             <TableCell>
-                                {user.planType !== 'cancelado' ? (
+                                {user.planStatus === 'cancelado' ? (
+                                    <span style={{ color: 'red', fontWeight: 'bold' }}>Cancelado</span>
+                                ) : (
+                                    <span style={{ color: 'green', fontWeight: 'bold' }}>Ativo</span>
+                                )}
+                            </TableCell>
+                            <TableCell>
+                                {user.planStatus !== 'cancelado' ? (
                                     <>
                                         <Button onClick={() => handleRenew(user._id)}>Renovar</Button>{' '}
                                         <Button onClick={() => handleCancelAccess(user._id)} danger>
@@ -144,7 +164,13 @@ export default function Dashboard() {
                                         </Button>
                                     </>
                                 ) : (
-                                    <em>Acesso cancelado</em>
+                                    <>
+                                        <em>Acesso cancelado</em>
+                                        <br />
+                                        <Button onClick={() => handleReactivate(user._id)}>
+                                            Retomar Acesso
+                                        </Button>
+                                    </>
                                 )}
                             </TableCell>
                         </TableRow>

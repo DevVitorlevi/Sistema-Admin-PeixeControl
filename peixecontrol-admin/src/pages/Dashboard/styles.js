@@ -20,7 +20,10 @@ export const ButtonGroup = styled.div`
   gap: 12px;
 `;
 
-export const Button = styled.button`
+// ✅ Correção do botão
+export const Button = styled.button.withConfig({
+  shouldForwardProp: (prop) => prop !== 'danger'
+})`
   padding: 12px 24px;
   background-color: ${({ danger }) => (danger ? '#d9534f' : '#188cf8')};
   color: white;
